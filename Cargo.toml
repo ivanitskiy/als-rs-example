@@ -1,0 +1,23 @@
+[package]
+name = "als-rs"
+version = "0.1.0"
+authors = ["Maxim Ivanitskiy <m.ivanitskiy@f5.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# build = "src/build.rs"
+
+[dependencies]
+tonic = { version = "0.6.0", features = ["prost"] }
+prost = "0.9.0"
+prost-types = "0.9"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+tower-http =  { version = "0.1.2", features = ["trace"] }
+tracing = "0.1.29"
+
+[build-dependencies]
+# prost-build = { version = "0.9.0" }
+tonic-build = { version = "0.6.0", features = ["prost"]}
+# glob = "0.3"
