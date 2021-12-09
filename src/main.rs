@@ -1,26 +1,24 @@
-pub mod pb {
-    include!(concat!(env!("OUT_DIR"), "/mod.rs"));
-
-}
-
-
+use signal_hook::{consts::SIGINT, iterator::Signals};
 use crate::pb::envoy::service::accesslog::v2::access_log_service_server::{
     AccessLogService, AccessLogServiceServer,
 };
+
 use tokio_stream::StreamExt;
 use tonic::{
     transport::Server, Request, Response, Status, Streaming,
     service::interceptor
 };
-
 use tracing::Level;
-
 use tower_http::{
     trace::{DefaultOnRequest, DefaultOnResponse, TraceLayer, DefaultOnFailure},
     LatencyUnit,
 };
 
+pub mod pb {
+    include!(concat!(env!("OUT_DIR"), "/mod.rs"));
+}
 use pb::envoy::service::accesslog::v2::{StreamAccessLogsMessage, StreamAccessLogsResponse};
+
 
 type StreamAccessLogsResult<T> = Result<Response<T>, Status>;
 
@@ -55,8 +53,18 @@ impl AccessLogService for AlsServer {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let als_svc = AlsServer {};
-    let addr = "[::1]:50051".parse()?;
+    let addr = "0.0.0.0:50051".parse()?;
     let timeout = std::time::Duration::from_secs(30);
+
+    println!("Starting server at {}", addr);
+
+    let mut signals = Signals::new(&[SIGINT])?;
+    std::thread::spawn(move || {
+        for sig in signals.forever() {
+            println!("Received signal {:?}", sig);
+            std::process::exit(128 + SIGINT);
+        }
+    });
 
     let mut builder = Server::builder();
     builder.timeout(timeout);
