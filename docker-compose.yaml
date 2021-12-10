@@ -1,0 +1,8 @@
+version: '3.7'
+services:
+  als-rs:
+    build:
+      context: .
+    ports:
+    - 50051:50051
+
