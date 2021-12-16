@@ -1,11 +1,8 @@
-use clap::{App, Arg};
 use chrono::prelude::*;
+use clap::{App, Arg};
 use env_logger::fmt::Formatter;
 use env_logger::Builder;
 use log::{info, warn, LevelFilter, Record};
-use std::thread;
-use std::io::Write;
-
 use rdkafka::client::ClientContext;
 use rdkafka::config::{ClientConfig, RDKafkaLogLevel};
 use rdkafka::consumer::stream_consumer::StreamConsumer;
@@ -14,6 +11,8 @@ use rdkafka::error::KafkaResult;
 use rdkafka::message::{Headers, Message};
 use rdkafka::topic_partition_list::TopicPartitionList;
 use rdkafka::util::get_rdkafka_version;
+use std::io::Write;
+use std::thread;
 
 // A context can be used to change the behavior of producers and consumers by adding callbacks
 // that will be executed by librdkafka.
@@ -85,25 +84,26 @@ async fn consume_and_print(brokers: &str, group_id: &str, topics: &[&str]) {
 }
 
 pub fn setup_logger(log_thread: bool, rust_log: Option<&str>) {
-    let output_format = move |formatter: &mut Formatter, record: &Record| -> Result<(), std::io::Error> {
-        let thread_name = if log_thread {
-            format!("(t: {}) ", thread::current().name().unwrap_or("unknown"))
-        } else {
-            "".to_string()
-        };
+    let output_format =
+        move |formatter: &mut Formatter, record: &Record| -> Result<(), std::io::Error> {
+            let thread_name = if log_thread {
+                format!("(t: {}) ", thread::current().name().unwrap_or("unknown"))
+            } else {
+                "".to_string()
+            };
 
-        let local_time: DateTime<Local> = Local::now();
-        let time_str = local_time.format("%H:%M:%S%.3f").to_string();
-        write!(
-            formatter,
-            "{} {}{} - {} - {}\n",
-            time_str,
-            thread_name,
-            record.level(),
-            record.target(),
-            record.args()
-        )
-    };
+            let local_time: DateTime<Local> = Local::now();
+            let time_str = local_time.format("%H:%M:%S%.3f").to_string();
+            write!(
+                formatter,
+                "{} {}{} - {} - {}\n",
+                time_str,
+                thread_name,
+                record.level(),
+                record.target(),
+                record.args()
+            )
+        };
 
     let mut builder = Builder::new();
     builder

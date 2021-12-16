@@ -2,5 +2,10 @@
     "protoc": {
         "options": [
             "--proto_path=${workspaceRoot}/proto/",
-        ]    }
+        ]
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "matklad.rust-analyzer", // Makes the magic
+        "editor.formatOnSave": true // Optional
+    },
 }

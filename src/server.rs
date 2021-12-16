@@ -1,30 +1,25 @@
 #[macro_use]
 extern crate log;
 
-use std::time::Duration;
+use kafka::error::Error as KafkaError;
+use kafka::producer::{Producer, Record, RequiredAcks};
 use signal_hook::{consts::SIGINT, iterator::Signals};
-use crate::pb::envoy::service::accesslog::v2::access_log_service_server::{
-    AccessLogService, AccessLogServiceServer,
-};
-
+use std::time::Duration;
 use tokio_stream::StreamExt;
-use tonic::{
-    transport::Server, Request, Response, Status, Streaming,
-    service::interceptor
-};
-use tracing::Level;
+use tonic::{service::interceptor, transport::Server, Request, Response, Status, Streaming};
 use tower_http::{
-    trace::{DefaultOnRequest, DefaultOnResponse, TraceLayer, DefaultOnFailure},
+    trace::{DefaultOnFailure, DefaultOnRequest, DefaultOnResponse, TraceLayer},
     LatencyUnit,
 };
+use tracing::Level;
 
 pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/mod.rs"));
 }
+use crate::pb::envoy::service::accesslog::v2::access_log_service_server::{
+    AccessLogService, AccessLogServiceServer,
+};
 use pb::envoy::service::accesslog::v2::{StreamAccessLogsMessage, StreamAccessLogsResponse};
-
-use kafka::error::Error as KafkaError;
-use kafka::producer::{Producer, Record, RequiredAcks};
 
 type StreamAccessLogsResult<T> = Result<Response<T>, Status>;
 
@@ -46,9 +41,13 @@ impl AccessLogService for AlsServer {
             debug!("proto msg = {:#?}", msg);
             let v = match serde_json::to_string_pretty(&msg) {
                 Ok(m) => m,
-                Err(_) => return  StreamAccessLogsResult::Err(Status::internal("failed to convert to json")),
+                Err(_) => {
+                    return StreamAccessLogsResult::Err(Status::internal(
+                        "failed to convert to json",
+                    ))
+                }
             };
-            debug!("json msg{}",v);
+            debug!("json msg{}", v);
 
             let broker = "localhost:9092";
             let topic = "my-topic";
@@ -97,7 +96,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ),
         )
         .layer(interceptor(some_other_interceptor))
-        .add_service(AccessLogServiceServer::with_interceptor(als_svc, als_interceptor))
+        .add_service(AccessLogServiceServer::with_interceptor(
+            als_svc,
+            als_interceptor,
+        ))
         .serve(addr)
         .await
         .unwrap();
